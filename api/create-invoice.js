@@ -1,102 +1,80 @@
 // api/create-invoice.js
-import { generateSecretKey, getPublicKey, finalizeEvent } from 'nostr-tools/pure';
-import { bytesToHex } from '@noble/hashes/utils';
+// Vercel Serverless Function — Crea un invoice Lightning via Blink API
 
-// Lightning Address de la pastelería
-const LIGHTNING_ADDRESS = process.env.LIGHTNING_ADDRESS || 'sweetshotsp@walletofsatoshi.com';
-
-// Relays donde WoS debe publicar el zap receipt
-const RELAYS = [
-  'wss://relay.damus.io',
-  'wss://relay.nostr.band',
-  'wss://nos.lol',
-  'wss://relay.primal.net',
-  'wss://nostr.wine'
-];
+const BLINK_API = 'https://api.blink.sv/graphql';
 
 export default async function handler(req, res) {
-  res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
-
-  if (req.method === 'OPTIONS') return res.status(200).end();
-  if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
+  // Solo aceptar POST
+  if (req.method !== 'POST') {
+    return res.status(405).json({ error: 'Method not allowed' });
+  }
 
   try {
     const { amountSats, description } = req.body;
 
-    if (!amountSats || amountSats <= 0) {
-      return res.status(400).json({ error: 'amountSats requerido y mayor a 0' });
+    // Validar input
+    if (!amountSats || amountSats < 1) {
+      return res.status(400).json({ error: 'amountSats debe ser mayor a 0' });
     }
 
-    // 1. Resolver Lightning Address directamente
-    const [user, domain] = LIGHTNING_ADDRESS.split('@');
-    const lnurlResponse = await fetch(`https://${domain}/.well-known/lnurlp/${user}`);
-    const lnurlData = await lnurlResponse.json();
+    // Llamar a Blink GraphQL API para crear invoice
+    const response = await fetch(BLINK_API, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-API-KEY': process.env.BLINK_API_KEY,
+      },
+      body: JSON.stringify({
+        query: `
+          mutation LnInvoiceCreate($input: LnInvoiceCreateInput!) {
+            lnInvoiceCreate(input: $input) {
+              invoice {
+                paymentRequest
+                paymentHash
+                satoshis
+              }
+              errors {
+                message
+              }
+            }
+          }
+        `,
+        variables: {
+          input: {
+            walletId: process.env.BLINK_WALLET_ID,
+            amount: amountSats,
+            memo: description || 'Sweet Shots',
+          },
+        },
+      }),
+    });
 
-    if (!lnurlData.callback) {
-      return res.status(500).json({ error: 'WoS no retornó callback URL' });
+    const data = await response.json();
+
+    // Verificar errores de Blink
+    const result = data?.data?.lnInvoiceCreate;
+    if (!result) {
+      console.error('[create-invoice] Respuesta inesperada de Blink:', JSON.stringify(data));
+      return res.status(500).json({ error: 'Respuesta inesperada de Blink' });
     }
 
-    const amountMillisats = amountSats * 1000;
-
-    // Validar que el monto está en el rango permitido por WoS
-    if (amountMillisats < lnurlData.minSendable || amountMillisats > lnurlData.maxSendable) {
-      return res.status(400).json({
-        error: `Monto fuera de rango: min ${lnurlData.minSendable/1000} sats, max ${lnurlData.maxSendable/1000} sats`
-      });
+    if (result.errors && result.errors.length > 0) {
+      console.error('[create-invoice] Error de Blink:', result.errors);
+      return res.status(500).json({ error: result.errors[0].message });
     }
 
-    // 2. Generar clave efímera para firmar el zap request
-    const ephemeralSk = generateSecretKey();
-    const ephemeralPk = getPublicKey(ephemeralSk);
-
-    // 3. Construir zap request (kind 9734)
-    const zapRequestEvent = {
-      kind: 9734,
-      created_at: Math.floor(Date.now() / 1000),
-      content: description || '',
-      tags: [
-        ['relays', ...RELAYS],
-        ['amount', String(amountMillisats)],
-        ['p', lnurlData.nostrPubkey]  // pubkey de WoS
-      ]
-    };
-
-    // 4. Firmar con la clave efímera
-    const signedZapRequest = finalizeEvent(zapRequestEvent, ephemeralSk);
-
-    console.log('[create-invoice] Zap request firmado, id:', signedZapRequest.id);
-    console.log('[create-invoice] Ephemeral pubkey:', ephemeralPk);
-
-    // 5. Enviar al callback LNURL con el parámetro nostr
-    const zapRequestJSON = JSON.stringify(signedZapRequest);
-    const encodedZap = encodeURIComponent(zapRequestJSON);
-    const separator = lnurlData.callback.includes('?') ? '&' : '?';
-    const invoiceUrl = `${lnurlData.callback}${separator}amount=${amountMillisats}&nostr=${encodedZap}`;
-
-    console.log('[create-invoice] Llamando callback WoS...');
-    const invoiceResponse = await fetch(invoiceUrl);
-    const invoiceData = await invoiceResponse.json();
-
-    if (!invoiceData.pr) {
-      console.error('[create-invoice] WoS no retornó invoice:', invoiceData);
-      return res.status(500).json({ error: 'WoS no retornó invoice', details: invoiceData });
+    if (!result.invoice || !result.invoice.paymentRequest) {
+      return res.status(500).json({ error: 'Blink no retornó un invoice' });
     }
 
-    console.log('[create-invoice] Invoice recibido OK');
-
-    // 6. Retornar al frontend
+    // Devolver invoice al frontend
     return res.status(200).json({
-      paymentRequest: invoiceData.pr,               // bolt11 para el QR
-      zapRequestId: signedZapRequest.id,             // para buscar el receipt después
-      zapRequestPubkey: ephemeralPk,                 // pubkey efímera usada
-      wosNostrPubkey: lnurlData.nostrPubkey,         // pubkey de WoS (firma el receipt)
-      relays: RELAYS                                  // dónde buscar el receipt
+      paymentRequest: result.invoice.paymentRequest,
+      paymentHash: result.invoice.paymentHash,
     });
 
   } catch (error) {
-    console.error('[create-invoice] Error:', error);
-    return res.status(500).json({ error: error.message });
+    console.error('[create-invoice] Error:', error.message);
+    return res.status(500).json({ error: 'Error interno del servidor' });
   }
 }

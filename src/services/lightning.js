@@ -29,12 +29,11 @@ import { config } from '../data/config.js';
 
 /**
  * Crea un invoice Lightning via el servidor Vercel.
- * El servidor habla con WoS directamente (sin CORS).
- * No requiere popups NIP-07 — el zap request se firma en el servidor.
+ * El servidor habla con Blink directamente (sin CORS).
  *
  * @param {number} amountSats - Monto en satoshis
  * @param {string} description - Descripción del pedido
- * @returns {Object} { paymentRequest, zapRequestId, wosNostrPubkey, relays }
+ * @returns {Object} { paymentRequest, paymentHash }
  */
 export async function createServerInvoice(amountSats, description = '') {
   const response = await fetch('/api/create-invoice', {
@@ -53,19 +52,17 @@ export async function createServerInvoice(amountSats, description = '') {
 
 /**
  * Verifica si un invoice fue pagado consultando al servidor Vercel.
- * El servidor busca zap receipts (kind 9735) en relays Nostr.
+ * El servidor consulta a Blink el estado del invoice.
  *
  * @param {Object} invoiceData - Datos retornados por createServerInvoice
- * @returns {Object} { paid, preimage, receiptId }
+ * @returns {Object} { paid: boolean, status: string }
  */
 export async function checkServerPayment(invoiceData) {
   const response = await fetch('/api/check-payment', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
-      zapRequestId: invoiceData.zapRequestId,
-      wosNostrPubkey: invoiceData.wosNostrPubkey,
-      relays: invoiceData.relays
+      paymentRequest: invoiceData.paymentRequest
     })
   });
 
