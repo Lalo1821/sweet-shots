@@ -17,6 +17,10 @@ export default async function handler(req, res) {
       return res.status(400).json({ error: 'amountSats debe ser mayor a 0' });
     }
 
+    // Diagnóstico temporal
+    console.log('[create-invoice] BLINK_API_KEY existe:', !!process.env.BLINK_API_KEY);
+    console.log('[create-invoice] BLINK_WALLET_ID existe:', !!process.env.BLINK_WALLET_ID);
+
     // Llamar a Blink GraphQL API para crear invoice
     const response = await fetch(BLINK_API, {
       method: 'POST',
