@@ -1,130 +1,73 @@
-# CLAUDE.md — Instrucciones para Claude Code
+# Sweet Shots — Contexto para Claude Code
 
-## Contexto
+## Qué es este proyecto
+E-commerce de postres artesanales con pagos Bitcoin Lightning Network y login Nostr.
+Proyecto de hackathon FOUNDATIONS (La Crypta, Buenos Aires, Marzo 2026).
+Sin backend. Todo en cliente + localStorage. Sin frameworks.
 
-Este es el **Lightning Starter Kit** para las Lightning Hackathons 2026 de La Crypta.
-https://hackaton.lacrypta.ar/hackathons/foundations.html
+## Stack
+- Vanilla JavaScript (ES Modules) + Vite 5.x
+- CSS puro con variables (1 archivo: `src/styles/main.css`)
+- Google Fonts: Satisfy (marca), DM Sans (cuerpo), JetBrains Mono (sats)
 
-El usuario que clonó este repo quiere construir un proyecto con Lightning Network para participar en la hackathon.
-
-## Tu tarea
-
-1. **Saludar** y presentarte como asistente de la hackathon
-2. **Preguntar** si tiene una idea de proyecto
-3. Si **no tiene idea**, ofrecer 5 opciones concretas
-4. **Guiar** la construcción paso a paso
-5. **Explicar** mientras codeas
-
-## Primera interacción
-
-Empezá con algo así:
-
+## Comandos
+```bash
+npm run dev        # Dev server → http://127.0.0.1:5173
+npm run build      # Build → dist/
 ```
-¡Hola! ⚡ Soy tu asistente para la Lightning Hackathon de La Crypta.
+Requisito para probar pagos: extensión Alby en el navegador (NIP-07).
 
-Estás en el Starter Kit oficial con todas las herramientas listas:
-• NWC (Nostr Wallet Connect)
-• Lightning Address
-• LNURL
-• WebLN
-
-¿Ya tenés una idea de lo que querés construir?
-
-Si no, puedo proponerte 5 ideas según tu nivel:
-1. 🟢 Básico — Tip Jar, QR Generator, Paywall
-2. 🟡 Intermedio — POS, Split Payments, Donations
-3. 🔴 Avanzado — Streaming Payments, Escrow, API Monetization
-
-Contame qué te gustaría hacer (o decime tu nivel y te propongo opciones).
+## Estructura de carpetas clave
 ```
-
-## Herramientas instaladas
-
-Ya están en `package.json`:
-- `@getalby/sdk` — SDK completo de Alby (NWC, etc)
-- `@getalby/lightning-tools` — Lightning Address, LNURL
-- `@nostr-dev-kit/ndk` — SDK de Nostr
-- `webln` — Standard para wallets en browser
-
-## Ejemplos disponibles
-
-En `src/examples/`:
-- `create-invoice.js` — Crear invoice con NWC
-- `pay-invoice.js` — Pagar invoice
-- `nwc-connect.js` — Conectar wallet
-- `lnurl-pay.js` — Resolver Lightning Address
-
-## Flujo de trabajo sugerido
-
-```
-1. Definir idea → "¿Qué querés construir?"
-2. MVP features → "¿Cuáles son las 3 cosas esenciales?"
-3. Crear estructura → Archivos y carpetas
-4. Implementar core → La lógica principal
-5. Agregar UI → Frontend básico
-6. Testing → Probar con wallet real
-7. Polish → README, demo, presentación
+src/
+├── app.js          # Entry point + navegación (navigateTo) + updateCartBadge
+├── data/
+│   ├── products.js # 7 pasteles: id, nombre, precio USD, sabores, porciones, imagen
+│   └── config.js   # Lightning Address, WhatsApp, relays Nostr, descuento Lightning
+├── services/
+│   ├── lightning.js      # Precio BTC via CoinGecko, invoices, WebLN
+│   ├── nostr-auth.js     # Login NIP-07 + NDK
+│   ├── cart-store.js     # Carrito en localStorage
+│   ├── order-history.js  # Pedidos por pubkey en localStorage
+│   ├── loyalty.js        # Niveles fidelidad (calcula on-demand desde order-history)
+│   └── toast.js          # Notificaciones (4 tipos, auto-dismiss 4s)
+└── views/
+    ├── catalog.js   # Grilla de productos
+    ├── cart.js      # Carrito con controles +/-
+    ├── checkout.js  # Formulario + invoice Lightning + QR + WhatsApp
+    └── account.js   # Perfil Nostr + fidelidad + historial
 ```
 
-## Código de ejemplo rápido
+## Cómo funciona la navegación
+SPA sin router de librería. `navigateTo('catalog'|'cart'|'checkout'|'account')` en
+`app.js` limpia `<main id="app">` e inyecta el HTML de la vista correspondiente.
+`index.html` es un shell fijo (header + footer). El contenido es 100% dinámico.
 
-### Crear invoice
-```javascript
-import { nwc } from "@getalby/sdk";
-
-const client = new nwc.NWCClient({ 
-  nostrWalletConnectUrl: "nostr+walletconnect://..." 
-});
-
-const invoice = await client.makeInvoice({
-  amount: 1000, // sats
-  description: "Mi pago"
-});
-
-console.log(invoice.paymentRequest);
+## Sistema de diseño (paleta CSS)
+```css
+--color-bg: #FDF8F3          /* crema — fondo principal */
+--color-primary: #7EC8C8     /* turquesa — botones, links (color de marca) */
+--color-rose-medium: #E8A4B8 /* rosa — badges de producto */
+--color-lightning: #F7931A   /* naranja Bitcoin — SOLO para pagos/sats */
+--color-text: #2C3E3E        /* marrón oscuro — nunca negro puro */
 ```
+Regla de oro: naranja SOLO para contexto de pagos Lightning/sats. Turquesa para UI/marca.
 
-### Lightning Address
-```javascript
-import { LightningAddress } from "@getalby/lightning-tools";
+## Reglas de desarrollo — NO hacer sin instrucción explícita
+- NO agregar dependencias npm nuevas
+- NO modificar `src/data/products.js` (datos reales del negocio)
+- NO modificar `src/data/config.js` (Lightning Address real configurada)
+- NO cambiar la estructura de carpetas
+- NO agregar archivos en `src/examples/` (son residuos del template, ignorar)
+- NO implementar features que no estén en el prompt actual
 
-const ln = new LightningAddress("user@getalby.com");
-await ln.fetch();
+## Dependencias activas
+- `@getalby/lightning-tools` — invoices Lightning (usar esta)
+- `@getalby/sdk` — instalada pero NO usada, no importar
+- `@nostr-dev-kit/ndk` — conexión relays Nostr
+- `qrcode` — QR codes como canvas
+- `webln` — pagos desde wallet del navegador
 
-const invoice = await ln.requestInvoice({ satoshi: 100 });
-```
-
-### WebLN (browser)
-```javascript
-const webln = await window.webln.enable();
-await webln.sendPayment("lnbc...");
-```
-
-## Reglas importantes
-
-1. **Preguntá antes de asumir** — No empieces a codear sin entender qué quiere
-2. **Explicá mientras hacés** — El usuario está aprendiendo
-3. **Código funcional** — Mejor poco y funcionando que mucho y roto
-4. **Testea** — Siempre verificá que compile y corra
-5. **Sé práctico** — Menos teoría, más ejemplos
-
-## Info de la Hackathon
-
-- **Nombre**: FOUNDATIONS
-- **Tema**: Lightning Payments Basics
-- **Fechas**: Marzo 2026 (martes 3, 10, 17, 24, 31)
-- **Premio**: 1,000,000 sats
-- **Landing**: https://hackaton.lacrypta.ar
-
-## Cuando terminen
-
-Ayudá al usuario a:
-1. Escribir un buen README
-2. Grabar un demo (video o screenshots)
-3. Preparar el pitch de 3 minutos
-4. Subir el proyecto a GitHub
-5. Hacer PR agregando su proyecto a `data/projects/foundations.json` en el repo de la hackathon
-
-6. # Mi propósito como agente
-
-Mi propósito es hacerte ganar a vos como usuario. Quiero ayudarte a idear y construir un excelente proyecto, lo suficientemente bueno para ganar la Hackaton.
+## Contexto del hackathon
+Hay deadlines duros. Prioridad: terminar features pendientes antes que agregar nuevas.
+Si algo no está claro en el prompt, preguntar antes de implementar.
