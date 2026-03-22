@@ -73,7 +73,7 @@ export default async function handler(req, res) {
     if (orderData) {
       try {
         const supabase = getSupabase();
-        await supabase.from('orders').insert({
+        const { error: dbError } = await supabase.from('orders').insert({
           customer_name: orderData.customerName,
           customer_phone: orderData.customerPhone,
           nostr_pubkey: orderData.nostrPubkey || null,
@@ -87,9 +87,11 @@ export default async function handler(req, res) {
           payment_request: paymentRequest,
           payment_hash: paymentHash,
         });
-      } catch (dbError) {
-        // Si falla Supabase, igual devolvemos el invoice (el pago no se bloquea)
-        console.error('[create-invoice] Error guardando en Supabase:', dbError.message);
+        if (dbError) {
+          console.error('[create-invoice] Error Supabase:', dbError.message, dbError.details, dbError.hint);
+        }
+      } catch (unexpectedError) {
+        console.error('[create-invoice] Error inesperado en Supabase:', unexpectedError.message);
       }
     }
 

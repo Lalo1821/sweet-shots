@@ -57,28 +57,36 @@ export default async function handler(req, res) {
         const supabase = getSupabase();
 
         // Buscar el pedido por payment_request
-        const { data: orders } = await supabase
+        const { data: orders, error: selectError } = await supabase
           .from('orders')
           .select('*')
           .eq('payment_request', paymentRequest)
           .eq('payment_status', 'pending')
           .limit(1);
 
+        if (selectError) {
+          console.error('[check-payment] Error SELECT Supabase:', selectError.message, selectError.details, selectError.hint);
+        }
+
         if (orders && orders.length > 0) {
           const order = orders[0];
 
           // Actualizar estado a "paid"
-          await supabase
+          const { error: updateError } = await supabase
             .from('orders')
             .update({ payment_status: 'paid' })
             .eq('id', order.id);
 
+          if (updateError) {
+            console.error('[check-payment] Error UPDATE Supabase:', updateError.message, updateError.details, updateError.hint);
+          }
+
           // Enviar email al dueño
           await notifyOwner(order);
         }
-      } catch (dbError) {
+      } catch (unexpectedError) {
         // Si falla Supabase o el email, no bloqueamos la respuesta al frontend
-        console.error('[check-payment] Error en post-pago:', dbError.message);
+        console.error('[check-payment] Error inesperado en post-pago:', unexpectedError.message);
       }
     }
 
