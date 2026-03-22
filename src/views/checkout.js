@@ -271,6 +271,33 @@ export async function renderCheckout(container) {
         deliveryAddress: address, customerName: name, customerPhone: phone,
       });
 
+      // Guardar pedido USD en Supabase
+      try {
+        await fetch('/api/save-order-usd', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            orderData: {
+              customerName: name,
+              customerPhone: phone,
+              nostrPubkey: user?.pubkey || null,
+              items: itemsSummary.map(i => ({
+                productId: i.id,
+                name: i.name,
+                quantity: i.quantity,
+                priceUsd: i.priceUsd,
+              })),
+              totalUsd: totalUsd,
+              deliveryMethod: selectedDelivery,
+              deliveryAddress: address || null,
+            }
+          })
+        });
+      } catch (e) {
+        // Si falla, no bloquear el flujo — el pedido se coordina por WhatsApp
+        console.warn('No se pudo guardar pedido en base de datos:', e.message);
+      }
+
       cartStore.clear();
       updateCartBadge();
 
@@ -301,7 +328,20 @@ export async function renderCheckout(container) {
         const description = `Sweet Shots - ${itemsSummary.map(i => `${i.name} x${i.quantity}`).join(', ')}`;
 
         // Crear invoice via servidor Vercel (sin CORS, sin popups NIP-07)
-        const invoiceData = await createServerInvoice(finalSats, description);
+        const invoiceData = await createServerInvoice(finalSats, description, {
+          customerName: name,
+          customerPhone: phone,
+          nostrPubkey: user?.pubkey || null,
+          items: itemsSummary.map(i => ({
+            productId: i.id,
+            name: i.name,
+            quantity: i.quantity,
+            priceUsd: i.priceUsd,
+          })),
+          totalUsd: totalUsd,
+          deliveryMethod: selectedDelivery,
+          deliveryAddress: address || null,
+        });
         const paymentRequest = invoiceData.paymentRequest;
 
         // Mostrar invoice con QR code

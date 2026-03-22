@@ -29,17 +29,18 @@ import { config } from '../data/config.js';
 
 /**
  * Crea un invoice Lightning via el servidor Vercel.
- * El servidor habla con Blink directamente (sin CORS).
+ * El servidor habla con Blink y guarda el pedido en Supabase.
  *
  * @param {number} amountSats - Monto en satoshis
  * @param {string} description - Descripción del pedido
+ * @param {Object} orderData - Datos del pedido (cliente, items, entrega)
  * @returns {Object} { paymentRequest, paymentHash }
  */
-export async function createServerInvoice(amountSats, description = '') {
+export async function createServerInvoice(amountSats, description = '', orderData = null) {
   const response = await fetch('/api/create-invoice', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ amountSats, description })
+    body: JSON.stringify({ amountSats, description, orderData })
   });
 
   if (!response.ok) {
