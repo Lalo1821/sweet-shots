@@ -6,7 +6,7 @@
  * 2. PAGO: Invoice Lightning con QR code, o link WhatsApp
  * 3. CONFIRMACION: Pago exitoso
  *
- * Requiere login con Nostr.
+ * Login con Nostr es opcional (desbloquea fidelidad).
  */
 
 import { products } from '../data/products.js';
@@ -46,22 +46,8 @@ async function renderQRCode(text, containerId) {
  * Renderizar la vista de checkout
  */
 export async function renderCheckout(container) {
-  // Verificar login
-  if (!nostrAuth.isLoggedIn()) {
-    container.innerHTML = `
-      <div class="login-required">
-        <div class="login-required-icon">🔐</div>
-        <h2>Inicia sesion para continuar</h2>
-        <p>Necesitas una cuenta de Nostr para realizar pedidos. Hace click en "Iniciar sesion" en el header.</p>
-        <div class="message message-info" style="max-width: 500px; margin: 24px auto; text-align: left;">
-          <strong>¿No tenes extension de Nostr?</strong><br>
-          Instala <a href="https://getalby.com" target="_blank" style="color: var(--color-secondary);">Alby</a>
-          en tu navegador. Es gratis y te sirve tambien como wallet Lightning.
-        </div>
-      </div>
-    `;
-    return;
-  }
+  // Usuario Nostr (puede ser null si no está logueado)
+  const user = nostrAuth.isLoggedIn() ? nostrAuth.getUser() : null;
 
   // Verificar que haya items en el carrito
   const items = cartStore.getItems();
@@ -81,7 +67,6 @@ export async function renderCheckout(container) {
   }
 
   // Obtener datos
-  const user = nostrAuth.getUser();
   let btcPrice;
   try {
     btcPrice = await lightning.getBtcPrice();
@@ -101,8 +86,8 @@ export async function renderCheckout(container) {
   const totalSats = Math.round((totalUsd / btcPrice) * 100_000_000);
   const totalSatsWithDiscount = Math.round(totalSats * 0.95);
 
-  const loyaltyDiscount = loyalty.getDiscount(user.pubkey);
-  const loyaltyLevel = loyalty.getLevel(user.pubkey);
+  const loyaltyDiscount = loyalty.getDiscount(user?.pubkey);
+  const loyaltyLevel = loyalty.getLevel(user?.pubkey);
   const totalSatsWithAllDiscounts = Math.round(totalSatsWithDiscount * (1 - loyaltyDiscount));
 
   const itemsListHtml = itemsSummary.map(item =>
@@ -112,8 +97,20 @@ export async function renderCheckout(container) {
     </div>`
   ).join('');
 
+  const nostrBanner = !user ? `
+    <div style="background: var(--color-turquesa-light, #E8F5F5); border: 1px solid var(--color-primary, #7EC8C8); border-radius: 12px; padding: 16px; margin-bottom: 24px; display: flex; align-items: center; gap: 12px;">
+      <div style="font-size: 1.5rem;">⚡</div>
+      <div>
+        <strong>¿Tenes cuenta Nostr?</strong>
+        <span style="color: var(--color-text-muted, #5A6B6B);"> Inicia sesion para acumular puntos de fidelidad y acceder a descuentos exclusivos.</span>
+      </div>
+    </div>
+  ` : '';
+
   container.innerHTML = `
     <h1 class="view-title">Checkout</h1>
+
+    ${nostrBanner}
 
     <div class="checkout-grid">
       <!-- COLUMNA IZQUIERDA: Formulario -->
@@ -123,7 +120,7 @@ export async function renderCheckout(container) {
         <div class="form-group">
           <label class="form-label">Nombre</label>
           <input type="text" class="form-input" id="checkout-name"
-            value="${user.name || ''}" placeholder="Tu nombre">
+            value="${user?.name || ''}" placeholder="Tu nombre">
         </div>
 
         <div class="form-group">
@@ -261,7 +258,7 @@ export async function renderCheckout(container) {
         .join(', ');
       const whatsappUrl = lightning.getWhatsAppPaymentUrl(totalUsd, orderDetails);
 
-      orderHistory.addOrder(user.pubkey, {
+      orderHistory.addOrder(user?.pubkey, {
         items: itemsSummary.map(i => ({
           productId: i.id, name: i.name,
           quantity: i.quantity, priceUsd: i.priceUsd,
@@ -402,7 +399,7 @@ export async function renderCheckout(container) {
           if (serverPollInterval) { clearInterval(serverPollInterval); serverPollInterval = null; }
           if (window.__serverPollCleanup) { window.__serverPollCleanup(); window.__serverPollCleanup = null; }
 
-          orderHistory.addOrder(user.pubkey, {
+          orderHistory.addOrder(user?.pubkey, {
             items: itemsSummary.map(i => ({
               productId: i.id, name: i.name,
               quantity: i.quantity, priceUsd: i.priceUsd,

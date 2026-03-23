@@ -24,10 +24,16 @@ export function renderAccount(container) {
   // Verificar login
   if (!nostrAuth.isLoggedIn()) {
     container.innerHTML = `
-      <div class="login-required">
-        <div class="login-required-icon">🔐</div>
-        <h2>Inicia sesion para ver tu cuenta</h2>
-        <p>Hace click en "Iniciar sesion" en el header para conectar tu cuenta de Nostr.</p>
+      <div style="text-align: center; padding: 60px 20px;">
+        <div style="font-size: 3rem; margin-bottom: 16px;">👤</div>
+        <h2>Mi Cuenta</h2>
+        <p style="color: var(--color-text-muted); margin: 16px 0; max-width: 400px; margin-left: auto; margin-right: auto;">
+          Inicia sesion con Nostr para ver tu historial de pedidos,
+          puntos de fidelidad y descuentos exclusivos.
+        </p>
+        <p style="color: var(--color-text-muted); font-size: 0.9rem;">
+          ¿No tenes Nostr? Podes comprar como invitado desde el checkout sin necesidad de cuenta.
+        </p>
       </div>
     `;
     return;

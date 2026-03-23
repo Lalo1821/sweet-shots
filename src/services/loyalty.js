@@ -33,6 +33,7 @@ export const loyalty = {
    * @returns {number} — Puntos totales
    */
   getPoints(pubkey) {
+    if (!pubkey) return 0;
     return orderHistory.getTotalSpentSats(pubkey);
   },
 
@@ -43,6 +44,7 @@ export const loyalty = {
    * @returns {Object} — { name, minPoints, discount, emoji }
    */
   getLevel(pubkey) {
+    if (!pubkey) return LEVELS[0];
     const points = this.getPoints(pubkey);
 
     // Recorrer niveles de mayor a menor para encontrar el que aplica
@@ -62,6 +64,7 @@ export const loyalty = {
    * @returns {number} — Descuento como decimal (ej: 0.05 = 5%)
    */
   getDiscount(pubkey) {
+    if (!pubkey) return 0;
     return this.getLevel(pubkey).discount;
   },
 

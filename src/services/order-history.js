@@ -51,6 +51,10 @@ export const orderHistory = {
    *   - customerPhone: Telefono
    */
   addOrder(pubkey, order) {
+    if (!pubkey) {
+      // Guest: no guardar en localStorage (el pedido ya está en Supabase)
+      return;
+    }
     const allOrders = getAllOrders();
 
     // Crear array para este usuario si no existe
@@ -80,6 +84,7 @@ export const orderHistory = {
    * @returns {Array} — Array de pedidos (el mas reciente primero)
    */
   getOrders(pubkey) {
+    if (!pubkey) return [];
     const allOrders = getAllOrders();
     return allOrders[pubkey] || [];
   },
@@ -91,6 +96,7 @@ export const orderHistory = {
    * @returns {number} — Total de sats gastados
    */
   getTotalSpentSats(pubkey) {
+    if (!pubkey) return 0;
     const orders = this.getOrders(pubkey);
     return orders
       .filter(order => order.status === 'paid')
