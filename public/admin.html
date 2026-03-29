@@ -1,0 +1,676 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sweet Shots — Admin</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Satisfy&family=DM+Sans:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    /* ===== VARIABLES ===== */
+    :root {
+      --bg: #FDF8F3;
+      --bg-card: #ffffff;
+      --bg-light: #F5EDE4;
+      --primary: #7EC8C8;
+      --primary-dark: #5BB8B8;
+      --rose: #E8A4B8;
+      --rose-light: #F8E0E6;
+      --lightning: #F7931A;
+      --lightning-soft: #FFF3E0;
+      --text: #2C3E3E;
+      --text-muted: #5A6B6B;
+      --success: #7CAE7A;
+      --success-light: #EDF7ED;
+      --error: #D4726A;
+      --error-light: #FDEDED;
+      --warning: #E6A817;
+      --warning-light: #FFF8E1;
+      --radius: 12px;
+      --shadow: 0 2px 8px rgba(0,0,0,0.08);
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: 'DM Sans', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+    }
+
+    /* ===== HEADER ===== */
+    .admin-header {
+      background: var(--bg-card);
+      padding: 16px 24px;
+      box-shadow: var(--shadow);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .admin-logo {
+      font-family: 'Satisfy', cursive;
+      font-size: 1.5rem;
+      color: var(--primary);
+    }
+    .admin-badge {
+      background: var(--primary);
+      color: white;
+      padding: 4px 12px;
+      border-radius: 20px;
+      font-size: 0.8rem;
+      font-weight: 500;
+    }
+    .btn-logout {
+      background: none;
+      border: 1px solid var(--text-muted);
+      color: var(--text-muted);
+      padding: 6px 16px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 0.85rem;
+    }
+
+    /* ===== LOGIN ===== */
+    .login-container {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 80vh;
+    }
+    .login-card {
+      background: var(--bg-card);
+      padding: 40px;
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      text-align: center;
+      max-width: 400px;
+      width: 90%;
+    }
+    .login-card h1 {
+      font-family: 'Satisfy', cursive;
+      font-size: 2rem;
+      color: var(--primary);
+      margin-bottom: 8px;
+    }
+    .login-card p {
+      color: var(--text-muted);
+      margin-bottom: 24px;
+    }
+    .login-input {
+      width: 100%;
+      padding: 12px 16px;
+      border: 1px solid var(--bg-light);
+      border-radius: 8px;
+      font-size: 1rem;
+      font-family: inherit;
+      margin-bottom: 16px;
+    }
+    .login-input:focus {
+      outline: none;
+      border-color: var(--primary);
+    }
+    .btn-login {
+      width: 100%;
+      padding: 12px;
+      background: var(--primary);
+      color: white;
+      border: none;
+      border-radius: 8px;
+      font-size: 1rem;
+      font-weight: 500;
+      cursor: pointer;
+      font-family: inherit;
+    }
+    .btn-login:hover { background: var(--primary-dark); }
+    .login-error {
+      color: var(--error);
+      margin-top: 12px;
+      font-size: 0.9rem;
+      display: none;
+    }
+
+    /* ===== DASHBOARD ===== */
+    .dashboard { padding: 24px; max-width: 1200px; margin: 0 auto; }
+
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+    .stat-card {
+      background: var(--bg-card);
+      padding: 20px;
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+    }
+    .stat-label {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 4px;
+    }
+    .stat-value {
+      font-size: 1.8rem;
+      font-weight: 600;
+    }
+    .stat-value.sats {
+      font-family: 'JetBrains Mono', monospace;
+      color: var(--lightning);
+    }
+    .stat-value.usd { color: var(--success); }
+    .stat-sub {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      margin-top: 4px;
+    }
+
+    /* ===== FILTROS ===== */
+    .filters {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 16px;
+      flex-wrap: wrap;
+    }
+    .filter-btn {
+      padding: 8px 16px;
+      border: 1px solid var(--bg-light);
+      border-radius: 20px;
+      background: var(--bg-card);
+      cursor: pointer;
+      font-size: 0.85rem;
+      font-family: inherit;
+      color: var(--text-muted);
+      transition: all 0.2s;
+    }
+    .filter-btn:hover { border-color: var(--primary); color: var(--primary); }
+    .filter-btn.active {
+      background: var(--primary);
+      color: white;
+      border-color: var(--primary);
+    }
+
+    /* ===== TABLA DE PEDIDOS ===== */
+    .orders-card {
+      background: var(--bg-card);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      overflow: hidden;
+    }
+    .orders-header {
+      padding: 16px 20px;
+      border-bottom: 1px solid var(--bg-light);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .orders-header h2 { font-size: 1.1rem; }
+    .refresh-indicator {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+    }
+    .new-order-pulse {
+      display: inline-block;
+      width: 8px;
+      height: 8px;
+      background: var(--success);
+      border-radius: 50%;
+      margin-right: 6px;
+      animation: pulse 1.5s infinite;
+    }
+    @keyframes pulse {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.5; transform: scale(1.3); }
+    }
+
+    .orders-table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+    .orders-table th {
+      text-align: left;
+      padding: 12px 16px;
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: var(--text-muted);
+      background: var(--bg);
+      border-bottom: 1px solid var(--bg-light);
+    }
+    .orders-table td {
+      padding: 12px 16px;
+      border-bottom: 1px solid var(--bg-light);
+      font-size: 0.9rem;
+      vertical-align: top;
+    }
+    .orders-table tr:hover { background: var(--bg); }
+
+    .order-items {
+      font-size: 0.85rem;
+      color: var(--text-muted);
+    }
+    .order-items span {
+      display: block;
+      line-height: 1.4;
+    }
+
+    /* ===== BADGES DE ESTADO ===== */
+    .status-badge {
+      display: inline-block;
+      padding: 4px 10px;
+      border-radius: 12px;
+      font-size: 0.75rem;
+      font-weight: 500;
+    }
+    .status-pending {
+      background: var(--warning-light);
+      color: var(--warning);
+    }
+    .status-paid {
+      background: var(--lightning-soft);
+      color: var(--lightning);
+    }
+    .status-processing {
+      background: #E8F5F5;
+      color: var(--primary-dark);
+    }
+    .status-delivered {
+      background: var(--success-light);
+      color: var(--success);
+    }
+    .status-cancelled {
+      background: var(--error-light);
+      color: var(--error);
+    }
+
+    /* ===== BOTONES DE ACCION ===== */
+    .action-btns { display: flex; gap: 4px; flex-wrap: wrap; }
+    .action-btn {
+      padding: 4px 10px;
+      border: 1px solid;
+      border-radius: 6px;
+      font-size: 0.75rem;
+      cursor: pointer;
+      background: white;
+      font-family: inherit;
+      transition: all 0.2s;
+    }
+    .action-btn:hover { transform: translateY(-1px); }
+    .action-btn.process {
+      border-color: var(--primary);
+      color: var(--primary);
+    }
+    .action-btn.deliver {
+      border-color: var(--success);
+      color: var(--success);
+    }
+    .action-btn.cancel {
+      border-color: var(--error);
+      color: var(--error);
+    }
+
+    /* ===== PAYMENT METHOD ===== */
+    .payment-lightning {
+      color: var(--lightning);
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.85rem;
+    }
+    .payment-usd {
+      color: var(--success);
+      font-weight: 500;
+    }
+
+    /* ===== EMPTY STATE ===== */
+    .empty-state {
+      text-align: center;
+      padding: 60px 20px;
+      color: var(--text-muted);
+    }
+    .empty-state-icon { font-size: 3rem; margin-bottom: 12px; }
+
+    /* ===== RESPONSIVE ===== */
+    @media (max-width: 768px) {
+      .stats-grid { grid-template-columns: repeat(2, 1fr); }
+      .orders-table { font-size: 0.8rem; }
+      .orders-table th, .orders-table td { padding: 8px 10px; }
+      .dashboard { padding: 16px; }
+
+      /* Tabla responsive: scroll horizontal */
+      .table-wrapper { overflow-x: auto; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- LOGIN -->
+  <div id="login-screen">
+    <div class="login-container">
+      <div class="login-card">
+        <h1>Sweet Shots</h1>
+        <p>Panel de Administracion</p>
+        <input type="password" class="login-input" id="password-input"
+          placeholder="Contrasena" autocomplete="current-password">
+        <button class="btn-login" id="btn-login">Entrar</button>
+        <p class="login-error" id="login-error">Contrasena incorrecta</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- DASHBOARD (oculto hasta login) -->
+  <div id="dashboard-screen" style="display: none;">
+    <header class="admin-header">
+      <div style="display: flex; align-items: center; gap: 12px;">
+        <span class="admin-logo">Sweet Shots</span>
+        <span class="admin-badge">Admin</span>
+      </div>
+      <div style="display: flex; align-items: center; gap: 16px;">
+        <span class="refresh-indicator" id="refresh-indicator">Actualizado hace un momento</span>
+        <button class="btn-logout" id="btn-logout">Salir</button>
+      </div>
+    </header>
+
+    <div class="dashboard">
+      <!-- ESTADISTICAS -->
+      <div class="stats-grid" id="stats-grid">
+        <!-- Se llena con JS -->
+      </div>
+
+      <!-- FILTROS -->
+      <div class="filters">
+        <button class="filter-btn active" data-status="all">Todos</button>
+        <button class="filter-btn" data-status="paid">Pagados</button>
+        <button class="filter-btn" data-status="processing">En proceso</button>
+        <button class="filter-btn" data-status="delivered">Entregados</button>
+        <button class="filter-btn" data-status="pending">Pendientes</button>
+        <button class="filter-btn" data-status="cancelled">Cancelados</button>
+      </div>
+
+      <!-- TABLA DE PEDIDOS -->
+      <div class="orders-card">
+        <div class="orders-header">
+          <h2>Pedidos</h2>
+          <span class="refresh-indicator" id="order-count"></span>
+        </div>
+        <div class="table-wrapper">
+          <table class="orders-table">
+            <thead>
+              <tr>
+                <th>Fecha</th>
+                <th>Cliente</th>
+                <th>Telefono</th>
+                <th>Pedido</th>
+                <th>Total</th>
+                <th>Pago</th>
+                <th>Estado</th>
+                <th>Acciones</th>
+              </tr>
+            </thead>
+            <tbody id="orders-tbody">
+              <!-- Se llena con JS -->
+            </tbody>
+          </table>
+        </div>
+        <div class="empty-state" id="empty-state" style="display: none;">
+          <div class="empty-state-icon">📋</div>
+          <p>No hay pedidos con este filtro</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // ===== STATE =====
+    let adminPassword = '';
+    let currentFilter = 'all';
+    let orders = [];
+    let previousOrderCount = 0;
+    let pollInterval = null;
+
+    // ===== ELEMENTS =====
+    const loginScreen = document.getElementById('login-screen');
+    const dashboardScreen = document.getElementById('dashboard-screen');
+    const passwordInput = document.getElementById('password-input');
+    const loginError = document.getElementById('login-error');
+    const statsgrid = document.getElementById('stats-grid');
+    const ordersTbody = document.getElementById('orders-tbody');
+    const orderCount = document.getElementById('order-count');
+    const emptyState = document.getElementById('empty-state');
+    const refreshIndicator = document.getElementById('refresh-indicator');
+
+    // ===== LOGIN =====
+    document.getElementById('btn-login').addEventListener('click', login);
+    passwordInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') login(); });
+
+    async function login() {
+      const pw = passwordInput.value.trim();
+      if (!pw) return;
+
+      try {
+        const res = await fetch('/api/admin/orders', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ password: pw, limit: 1 })
+        });
+
+        if (res.status === 401) {
+          loginError.style.display = 'block';
+          return;
+        }
+
+        adminPassword = pw;
+        loginScreen.style.display = 'none';
+        dashboardScreen.style.display = 'block';
+
+        // Cargar datos iniciales
+        await Promise.all([loadOrders(), loadStats()]);
+
+        // Auto-refresh cada 15 segundos
+        pollInterval = setInterval(async () => {
+          await Promise.all([loadOrders(), loadStats()]);
+        }, 15000);
+
+      } catch (err) {
+        loginError.textContent = 'Error de conexion';
+        loginError.style.display = 'block';
+      }
+    }
+
+    // ===== LOGOUT =====
+    document.getElementById('btn-logout').addEventListener('click', () => {
+      adminPassword = '';
+      orders = [];
+      if (pollInterval) clearInterval(pollInterval);
+      dashboardScreen.style.display = 'none';
+      loginScreen.style.display = 'block';
+      passwordInput.value = '';
+      loginError.style.display = 'none';
+    });
+
+    // ===== CARGAR PEDIDOS =====
+    async function loadOrders() {
+      try {
+        const res = await fetch('/api/admin/orders', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ password: adminPassword, status: currentFilter })
+        });
+
+        if (!res.ok) return;
+        const data = await res.json();
+        orders = data.orders || [];
+
+        // Detectar pedidos nuevos
+        if (previousOrderCount > 0 && orders.length > previousOrderCount) {
+          document.title = '🔔 Nuevo pedido! — Sweet Shots Admin';
+          setTimeout(() => { document.title = 'Sweet Shots — Admin'; }, 5000);
+        }
+        previousOrderCount = orders.length;
+
+        renderOrders();
+        updateRefreshTime();
+
+      } catch (err) {
+        console.error('Error cargando pedidos:', err);
+      }
+    }
+
+    // ===== CARGAR ESTADISTICAS =====
+    async function loadStats() {
+      try {
+        const res = await fetch('/api/admin/stats', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ password: adminPassword })
+        });
+
+        if (!res.ok) return;
+        const stats = await res.json();
+
+        statsgrid.innerHTML = `
+          <div class="stat-card">
+            <div class="stat-label">Pedidos totales</div>
+            <div class="stat-value">${stats.totalOrders}</div>
+            <div class="stat-sub">${stats.ordersToday} hoy</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">Ingresos USD</div>
+            <div class="stat-value usd">$${stats.totalUsd}</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">Ingresos Sats</div>
+            <div class="stat-value sats">⚡ ${Number(stats.totalSats).toLocaleString()}</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">Metodo de pago</div>
+            <div class="stat-value" style="font-size: 1.2rem;">
+              ⚡ ${stats.lightningOrders} · 💵 ${stats.usdOrders}
+            </div>
+            <div class="stat-sub">Lightning vs USD</div>
+          </div>
+          ${stats.topProduct ? `
+          <div class="stat-card">
+            <div class="stat-label">Mas vendido</div>
+            <div class="stat-value" style="font-size: 1.2rem;">🎂 ${stats.topProduct.name}</div>
+            <div class="stat-sub">${stats.topProduct.count} unidades</div>
+          </div>
+          ` : ''}
+        `;
+      } catch (err) {
+        console.error('Error cargando stats:', err);
+      }
+    }
+
+    // ===== RENDERIZAR PEDIDOS =====
+    function renderOrders() {
+      if (orders.length === 0) {
+        ordersTbody.innerHTML = '';
+        emptyState.style.display = 'block';
+        orderCount.textContent = '0 pedidos';
+        return;
+      }
+
+      emptyState.style.display = 'none';
+      orderCount.textContent = `${orders.length} pedidos`;
+
+      ordersTbody.innerHTML = orders.map(order => {
+        const date = new Date(order.created_at);
+        const dateStr = date.toLocaleDateString('es-AR', { day: '2-digit', month: '2-digit' });
+        const timeStr = date.toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' });
+
+        const items = (order.items || [])
+          .map(i => `<span>${i.name} x${i.quantity}</span>`)
+          .join('');
+
+        const statusClass = `status-${order.payment_status}`;
+        const statusLabels = {
+          pending: 'Pendiente',
+          paid: 'Pagado',
+          processing: 'En proceso',
+          delivered: 'Entregado',
+          cancelled: 'Cancelado',
+          expired: 'Expirado',
+        };
+
+        const paymentHtml = order.payment_method === 'lightning'
+          ? `<span class="payment-lightning">⚡ ${Number(order.total_sats).toLocaleString()} sats</span>`
+          : `<span class="payment-usd">💵 USD</span>`;
+
+        // Botones de accion segun estado actual
+        let actionsHtml = '';
+        if (order.payment_status === 'paid') {
+          actionsHtml = `
+            <button class="action-btn process" onclick="updateStatus('${order.id}', 'processing')">Procesar</button>
+            <button class="action-btn cancel" onclick="updateStatus('${order.id}', 'cancelled')">Cancelar</button>
+          `;
+        } else if (order.payment_status === 'processing') {
+          actionsHtml = `
+            <button class="action-btn deliver" onclick="updateStatus('${order.id}', 'delivered')">Entregar</button>
+          `;
+        } else if (order.payment_status === 'pending') {
+          actionsHtml = `
+            <button class="action-btn cancel" onclick="updateStatus('${order.id}', 'cancelled')">Cancelar</button>
+          `;
+        }
+
+        const deliveryIcon = order.delivery_method === 'pickup' ? '🏪' : '🚗';
+
+        return `
+          <tr>
+            <td>
+              <div>${dateStr}</div>
+              <div style="color: var(--text-muted); font-size: 0.8rem;">${timeStr}</div>
+            </td>
+            <td>
+              <div>${order.customer_name || '—'}</div>
+              <div style="color: var(--text-muted); font-size: 0.8rem;">${deliveryIcon} ${order.delivery_method === 'pickup' ? 'Retiro' : 'Delivery'}</div>
+            </td>
+            <td style="font-size: 0.85rem;">${order.customer_phone || '—'}</td>
+            <td><div class="order-items">${items}</div></td>
+            <td>
+              <div>$${parseFloat(order.total_usd).toFixed(2)}</div>
+              ${paymentHtml}
+            </td>
+            <td>${paymentHtml}</td>
+            <td><span class="status-badge ${statusClass}">${statusLabels[order.payment_status] || order.payment_status}</span></td>
+            <td><div class="action-btns">${actionsHtml}</div></td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    // ===== ACTUALIZAR ESTADO =====
+    async function updateStatus(orderId, newStatus) {
+      try {
+        const res = await fetch('/api/admin/update-order', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ password: adminPassword, orderId, newStatus })
+        });
+
+        if (res.ok) {
+          await Promise.all([loadOrders(), loadStats()]);
+        }
+      } catch (err) {
+        console.error('Error actualizando estado:', err);
+      }
+    }
+
+    // ===== FILTROS =====
+    document.querySelectorAll('.filter-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        currentFilter = btn.dataset.status;
+        loadOrders();
+      });
+    });
+
+    // ===== REFRESH INDICATOR =====
+    function updateRefreshTime() {
+      refreshIndicator.textContent = `Actualizado ${new Date().toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}`;
+    }
+  </script>
+
+</body>
+</html>
