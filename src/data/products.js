@@ -19,12 +19,12 @@ export const products = [
     id: 'cake-6',
     name: 'Pastel 6"',
     description: 'Pastel de un piso, 6 pulgadas de diámetro.',
-    priceUsd: 0.085, // TEST: ~100 sats — cambiar a 15 después de probar
+    priceUsd: 0.085, // Precio de prueba para demos y evaluación del jurado. Precio real: $15
     category: 'un-piso',
     emoji: '🎂',
     sizes: '6"',
     servings: '6-8 personas',
-    flavors: ['Chocolate', 'Vainilla', 'Red Velvet', 'Dulce de leche'],
+    flavors: ['Vainilla', 'Chocolate', 'Marmoleada', 'Red Velvet', 'Zanahorias', 'Naranja', 'Limón'],
   },
   {
     id: 'cake-7',
@@ -35,7 +35,7 @@ export const products = [
     emoji: '🎂',
     sizes: '7"',
     servings: '8-12 personas',
-    flavors: ['Chocolate', 'Vainilla', 'Red Velvet', 'Dulce de leche'],
+    flavors: ['Vainilla', 'Chocolate', 'Marmoleada', 'Red Velvet', 'Zanahorias', 'Naranja', 'Limón'],
   },
   {
     id: 'cake-8',
@@ -46,7 +46,7 @@ export const products = [
     emoji: '🎂',
     sizes: '8"',
     servings: '12-16 personas',
-    flavors: ['Chocolate', 'Vainilla', 'Red Velvet', 'Dulce de leche', 'Limón'],
+    flavors: ['Vainilla', 'Chocolate', 'Marmoleada', 'Red Velvet', 'Zanahorias', 'Naranja', 'Limón'],
   },
   {
     id: 'cake-10',
@@ -57,7 +57,7 @@ export const products = [
     emoji: '🎂',
     sizes: '10"',
     servings: '20-25 personas',
-    flavors: ['Chocolate', 'Vainilla', 'Red Velvet', 'Dulce de leche', 'Limón'],
+    flavors: ['Vainilla', 'Chocolate', 'Marmoleada', 'Red Velvet', 'Zanahorias', 'Naranja', 'Limón'],
   },
 
   // === PASTELES DE DOS PISOS ===
@@ -70,7 +70,7 @@ export const products = [
     emoji: '🎂',
     sizes: '5" + 7"',
     servings: '15-20 personas',
-    flavors: ['Chocolate', 'Vainilla', 'Red Velvet', 'Dulce de leche'],
+    flavors: ['Vainilla', 'Chocolate', 'Marmoleada', 'Red Velvet', 'Zanahorias', 'Naranja', 'Limón'],
   },
   {
     id: 'cake-6-8',
@@ -81,7 +81,7 @@ export const products = [
     emoji: '🎂',
     sizes: '6" + 8"',
     servings: '20-28 personas',
-    flavors: ['Chocolate', 'Vainilla', 'Red Velvet', 'Dulce de leche', 'Limón'],
+    flavors: ['Vainilla', 'Chocolate', 'Marmoleada', 'Red Velvet', 'Zanahorias', 'Naranja', 'Limón'],
   },
   {
     id: 'cake-7-9',
@@ -92,6 +92,6 @@ export const products = [
     emoji: '🎂',
     sizes: '7" + 9"',
     servings: '28-35 personas',
-    flavors: ['Chocolate', 'Vainilla', 'Red Velvet', 'Dulce de leche', 'Limón'],
+    flavors: ['Vainilla', 'Chocolate', 'Marmoleada', 'Red Velvet', 'Zanahorias', 'Naranja', 'Limón'],
   },
 ];

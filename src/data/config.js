@@ -18,9 +18,9 @@ export const config = {
   // CAMBIA ESTO por tu Lightning Address real
   lightningAddress: 'sweetshotsp@walletofsatoshi.com',
 
+  // TODO: Reemplazar con datos reales del negocio
   // Numero de WhatsApp para pagos en USD (con codigo de pais)
-  // CAMBIA ESTO por tu numero real
-  whatsappNumber: '+5491112345678',
+  whatsappNumber: '+5491155555555',
 
   // Mensaje predeterminado de WhatsApp para pagos en USD
   whatsappMessage: 'Hola! Quiero pagar mi pedido de Sweet Shots en USD.',
@@ -34,8 +34,9 @@ export const config = {
     delivery: true,  // Envio a domicilio
   },
 
+  // TODO: Reemplazar con datos reales del negocio
   // Direccion del local (para retiro)
-  pickupAddress: 'Tu direccion del local aca',
+  pickupAddress: 'Buenos Aires, Argentina',
 
   // Relays de Nostr para buscar perfiles de usuarios
   // Los relays son servidores que almacenan datos de Nostr

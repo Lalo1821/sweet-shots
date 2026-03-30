@@ -1,222 +1,151 @@
-# ⚡ Lightning Starter Kit
+# 🧁 Sweet Shots — Postres Artesanales con Bitcoin Lightning
 
-Starter kit oficial para las **Lightning Hackathons 2026** de La Crypta.
+E-commerce real de pastelería artesanal que acepta pagos con Bitcoin Lightning Network.
+Desarrollado para la hackathon **FOUNDATIONS 2026** de [La Crypta](https://lacrypta.ar), Buenos Aires.
 
-Incluye ejemplos, utilidades y guía asistida con AI para construir tu proyecto.
+**🌐 App en producción:** [sweet-shots.vercel.app](https://sweet-shots.vercel.app)
 
-## 🚀 Inicio rápido
+## Qué es
 
-### Opción 1: Con Claude Code (recomendado)
+Sweet Shots es la tienda online de una pastelería artesanal real en Buenos Aires.
+Los clientes pueden explorar el catálogo de pasteles, agregar productos al carrito,
+y pagar con Bitcoin Lightning Network recibiendo un **5% de descuento** por elegir
+pagos en sats. También pueden pagar en USD coordinando por WhatsApp.
 
-```bash
-# Clonar el repositorio
-git clone https://github.com/lacrypta/lightning-starter.git
-cd lightning-starter
+## Screenshots
 
-# Abrir con Claude Code
-claude
+![Catálogo de productos](public/images/screenshots/screenshot-catalog.png)
 
-# El asistente te guía para construir tu proyecto
+![Checkout con Lightning](public/images/screenshots/screenshot-checkout.png)
+
+![Panel de administración](public/images/screenshots/screenshot-admin.png)
+
+## Features
+
+- Catálogo de 7 pasteles artesanales (un piso y dos pisos) con precios en USD convertidos a sats en tiempo real
+- Carrito de compras persistente
+- Checkout con invoice Lightning + QR code para escanear
+- Pago directo desde wallet del navegador via WebLN
+- 5% de descuento por pagar con Lightning
+- Pago alternativo en USD coordinado por WhatsApp
+- Login opcional con Nostr (NIP-07) para programa de fidelidad
+- Programa de fidelidad: 3 niveles basados en sats acumulados
+- Panel de administración con estadísticas y gestión de pedidos
+- Notificación por email al dueño cuando entra un pedido
+
+## Stack técnico
+
+| Capa | Tecnología |
+|------|-----------|
+| Frontend | Vanilla JS (ES Modules) + Vite |
+| Hosting | Vercel (estáticos + serverless functions) |
+| Pagos Lightning | Blink API (GraphQL) |
+| Base de datos | Supabase (PostgreSQL) |
+| Notificaciones | Resend |
+| Identidad | Nostr NIP-07 (opcional) |
+
+## Arquitectura de pagos
+
+```
+Cliente (navegador)
+    │
+    ├─ POST /api/create-invoice  →  Vercel Serverless  →  Blink API (crea invoice)
+    │                                                         │
+    │                                                         ▼
+    │                                                    Invoice Lightning
+    │                                                         │
+    ├─ GET /api/check-payment    →  Vercel Serverless  →  Blink API (verifica pago)
+    │
+    └─ Supabase (guarda pedido con status pending → paid)
 ```
 
-Claude va a:
-- Preguntarte qué querés construir
-- Proponerte ideas si no tenés
-- Guiarte paso a paso
-- Ayudarte a ganar la hackathon
+El frontend nunca habla directamente con la wallet. Toda la lógica de pagos
+pasa por serverless functions, lo que hace la wallet intercambiable sin tocar el frontend.
 
-### Opción 2: Manual
+## Correr localmente
 
 ```bash
-# Clonar el repositorio
-git clone https://github.com/lacrypta/lightning-starter.git
-cd lightning-starter
-
-# Instalar dependencias
+git clone https://github.com/Lalo1821/sweet-shots.git
+cd sweet-shots
 npm install
-
-# Ejecutar el frontend de demo
 npm run dev
 ```
 
-Abrir http://localhost:5173 en el navegador.
+La app corre en `http://127.0.0.1:5173`.
 
-## 📦 Herramientas incluidas
+### Variables de entorno (para serverless functions)
 
-| Herramienta | Descripción | Docs |
-|-------------|-------------|------|
-| **@getalby/sdk** | SDK de Alby para NWC y pagos | [Docs](https://github.com/getAlby/js-sdk) |
-| **@getalby/lightning-tools** | Utilidades: LNURL, Lightning Address | [Docs](https://github.com/getAlby/lightning-tools) |
-| **@nostr-dev-kit/ndk** | SDK para Nostr (identidad, eventos) | [Docs](https://github.com/nostr-dev-kit/ndk) |
-| **webln** | Standard para wallets Lightning | [Docs](https://webln.dev) |
+Configurar en Vercel o en archivo `.env`:
 
-## 🔌 Nostr Wallet Connect (NWC)
+| Variable | Descripción |
+|----------|------------|
+| `BLINK_API_KEY` | API key de Blink |
+| `BLINK_WALLET_ID` | Wallet ID BTC de Blink |
+| `SUPABASE_URL` | URL del proyecto Supabase |
+| `SUPABASE_SERVICE_ROLE_KEY` | Service role key de Supabase |
+| `RESEND_API_KEY` | API key de Resend |
+| `OWNER_EMAIL` | Email del dueño para notificaciones |
+| `ADMIN_PASSWORD` | Contraseña del panel admin |
 
-NWC permite conectar tu app a cualquier wallet Lightning compatible.
+**Nota:** Sin las variables de entorno, el catálogo y carrito funcionan normalmente.
+Las variables solo son necesarias para procesar pagos Lightning y persistir pedidos.
 
-```javascript
-import { nwc } from "@getalby/sdk";
+## Decisiones de diseño
 
-// Conectar con string NWC
-const client = new nwc.NWCClient({
-  nostrWalletConnectUrl: "nostr+walletconnect://..."
-});
+- **Vanilla JS sin frameworks:** El proyecto prioriza simplicidad. 4 vistas, navegación con `navigateTo()`, estado manual. Un framework agregaría complejidad innecesaria.
+- **Blink como procesador:** API GraphQL con buena documentación. Las serverless functions abstraen el procesador, permitiendo migrar a BTCPay Server sin cambiar el frontend.
+- **Guest checkout:** Cualquier persona puede comprar sin crear cuenta. Nostr es opcional, solo para el programa de fidelidad.
+- **Precios en USD:** El negocio maneja costos en dólares. La conversión a sats se hace en tiempo real via CoinGecko con cache de 5 minutos.
 
-// Crear invoice
-const invoice = await client.makeInvoice({
-  amount: 1000, // sats
-  description: "Pago de prueba"
-});
-
-console.log(invoice.paymentRequest); // bolt11 invoice
-
-// Pagar invoice
-const response = await client.payInvoice({
-  invoice: "lnbc..."
-});
-```
-
-## 💸 Lightning Address
-
-Enviar pagos a Lightning Addresses (user@domain.com):
-
-```javascript
-import { LightningAddress } from "@getalby/lightning-tools";
-
-// Resolver Lightning Address
-const ln = new LightningAddress("claudio@lacrypta.ar");
-await ln.fetch();
-
-// Generar invoice de 1000 sats
-const invoice = await ln.requestInvoice({ satoshi: 1000 });
-console.log(invoice.paymentRequest);
-
-// Info del destinatario
-console.log(ln.lnurlpData);
-```
-
-## 🔗 LNURL-pay
-
-Pagar usando LNURL:
-
-```javascript
-import { requestInvoice } from "@getalby/lightning-tools";
-
-// Desde LNURL
-const invoice = await requestInvoice({
-  lnUrlOrAddress: "lnurl1dp68gurn8ghj7...",
-  tokens: 1000 // sats
-});
-
-// Desde Lightning Address
-const invoice2 = await requestInvoice({
-  lnUrlOrAddress: "user@getalby.com",
-  tokens: 500
-});
-```
-
-## 🌐 WebLN (Browser)
-
-Para apps en el navegador con extensión de wallet:
-
-```javascript
-import { requestProvider } from "webln";
-
-// Conectar con wallet del navegador (Alby, etc)
-const webln = await requestProvider();
-
-// Enviar pago
-await webln.sendPayment("lnbc...");
-
-// Crear invoice
-const invoice = await webln.makeInvoice({
-  amount: 1000,
-  defaultMemo: "Pago desde mi app"
-});
-```
-
-## 📁 Estructura del proyecto
+## Estructura del proyecto
 
 ```
-lightning-starter/
+sweet-shots/
+├── index.html                    # Shell HTML
+├── admin.html                    # Panel de administración
+├── api/                          # Vercel serverless functions
+│   ├── create-invoice.js         # Crear invoice Lightning via Blink
+│   ├── check-payment.js          # Verificar pago via Blink
+│   ├── lib/supabase.js           # Helper Supabase compartido
+│   └── admin/                    # Endpoints del panel admin
+│       ├── orders.js
+│       ├── update-order.js
+│       └── stats.js
 ├── src/
-│   ├── examples/           # Ejemplos para correr con Node
-│   │   ├── create-invoice.js
-│   │   ├── pay-invoice.js
-│   │   ├── nwc-connect.js
-│   │   └── lnurl-pay.js
-│   ├── main.js             # Entry point del frontend
-│   └── lib/                # Utilidades reutilizables
-├── public/
-│   └── index.html          # Frontend de demo
-├── package.json
-└── README.md
+│   ├── app.js                    # Entry point, navegación
+│   ├── data/
+│   │   ├── products.js           # Catálogo de productos
+│   │   └── config.js             # Configuración general
+│   ├── services/                 # Lógica de negocio
+│   │   ├── cart-store.js
+│   │   ├── lightning.js
+│   │   ├── nostr-auth.js
+│   │   ├── order-history.js
+│   │   ├── loyalty.js
+│   │   └── toast.js
+│   ├── views/                    # Vistas de la SPA
+│   │   ├── catalog.js
+│   │   ├── cart.js
+│   │   ├── checkout.js
+│   │   └── account.js
+│   └── styles/
+│       └── main.css
+└── public/images/                # Assets estáticos
 ```
 
-## 🏃 Ejecutar ejemplos
+## Panel de administración
 
-```bash
-# Crear invoice con NWC
-npm run example:invoice
+Accesible en `/admin.html`. Protegido con contraseña (variable `ADMIN_PASSWORD`).
+Permite ver estadísticas del negocio, filtrar pedidos por estado, y cambiar el
+estado de cada pedido (procesar, entregar, cancelar).
 
-# Pagar invoice
-npm run example:pay
+## Créditos
 
-# Conectar wallet NWC
-npm run example:nwc
+Desarrollado por Eduardo ([@Lalo1821](https://github.com/Lalo1821)) para la
+hackathon FOUNDATIONS 2026 de [La Crypta](https://lacrypta.ar).
 
-# Pagar Lightning Address
-npm run example:lnurl
-```
+Construido con el [Lightning Starter Kit](https://github.com/nicbus/lightning-starter-kit) de La Crypta como punto de partida.
 
-> ⚠️ Para los ejemplos que usan NWC, necesitás configurar tu connection string en `.env`
+## Licencia
 
-## ⚙️ Configuración
-
-Crear archivo `.env`:
-
-```env
-# Tu Nostr Wallet Connect URL (desde Alby u otra wallet)
-NWC_URL=nostr+walletconnect://...
-
-# Opcional: tu Lightning Address para testing
-LIGHTNING_ADDRESS=tu@email.com
-```
-
-## 📚 Recursos
-
-- [Lightning Network Docs](https://lightning.network/)
-- [Alby Developer Portal](https://guides.getalby.com/developer-guide)
-- [LNURL Specs](https://github.com/lnurl/luds)
-- [NWC Spec (NIP-47)](https://github.com/nostr-protocol/nips/blob/master/47.md)
-- [WebLN Docs](https://webln.dev)
-
-## 🎯 Ideas para la hackathon
-
-- **POS simple**: Terminal de punto de venta
-- **Tipping widget**: Botón de propinas para sitios web
-- **Pay-per-content**: Paywall para artículos/videos
-- **Split payments**: Dividir pagos entre múltiples wallets
-- **Subscriptions**: Pagos recurrentes con NWC
-- **Social payments**: Integrar zaps en tu app
-
-## 🏆 Hackathon FOUNDATIONS - Marzo 2026
-
-Este starter es para la primera hackathon del programa:
-
-- **Fechas**: 3-31 de Marzo 2026
-- **Tema**: Lightning Payments Basics
-- **Premio**: 1,000,000 sats
-- **Info**: [hackaton.lacrypta.ar](https://hackaton.lacrypta.ar)
-
-## 🤝 Contribuir
-
-1. Fork este repo
-2. Creá tu feature branch (`git checkout -b mi-feature`)
-3. Commit tus cambios (`git commit -m 'Agregar feature'`)
-4. Push a la branch (`git push origin mi-feature`)
-5. Abrí un Pull Request
-
----
-
-Hecho con ⚡ por [La Crypta](https://lacrypta.ar)
+MIT
