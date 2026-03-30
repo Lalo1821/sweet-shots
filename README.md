@@ -141,7 +141,7 @@ estado de cada pedido (procesar, entregar, cancelar).
 
 ## Créditos
 
-Desarrollado por Eduardo ([@Lalo1821](https://github.com/Lalo1821)) para la
+Desarrollado por Lalo ([@Lalo1821](https://github.com/Lalo1821)) para la
 hackathon FOUNDATIONS 2026 de [La Crypta](https://lacrypta.ar).
 
 Construido con el [Lightning Starter Kit](https://github.com/nicbus/lightning-starter-kit) de La Crypta como punto de partida.
